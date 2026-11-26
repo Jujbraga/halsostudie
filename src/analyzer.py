@@ -63,8 +63,16 @@ class HealthAnalyzer:
         })
 
     def linear_regression(self, x, y, pred: float=None, unit: str=None):
-        """Fit a linear regression of column `y` on column `x`."""
-        x = self.df[[x]].to_numpy()
+        """Fit a simple or multiple linear regression.
+
+        Args:
+            x: Column name (simple) or list of column names (multiple).
+            y: Name of the target column.
+            pred: Optional values to predict for, one per x column.
+            unit: Optional unit label shown in the prediction text.
+        """
+        cols = [x] if isinstance(x, str) else list(x)
+        x = self.df[cols].to_numpy()
         y = self.df[y].to_numpy()
 
         return f.linear_regr(x, y, pred, unit)
@@ -87,3 +95,7 @@ class HealthAnalyzer:
         y = self.df[y_col].to_numpy()
 
         return v.scatter_regression(x, y, interc, coef)
+
+    def plot_residuals(self, results: dict):
+        """Plot residuals vs predicted values from a regression result."""
+        return v.scatter_residuals(results["y_pred"], results["residuals"])

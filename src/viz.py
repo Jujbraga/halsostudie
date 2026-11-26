@@ -66,7 +66,16 @@ def scatter_regression(x, y, interc, coef):
     x_line = np.linspace(x.min(), x.max(), 100)
     y_line = interc + coef * x_line
     plt.plot(x_line, y_line, color="black")
-    plt.xlabel("År")
-    plt.ylabel("blodtryck (mmHg)")
-    plt.title("blodtryck vs år")
+    plt.xlabel("Ålder (år)")
+    plt.ylabel("Blodtryck (mmHg)")
+    plt.title("Blodtryck vs ålder")
+    plt.show()
+
+def scatter_residuals(x, y):
+    plt.figure(figsize=(6, 4))
+    plt.scatter(x, y, alpha=0.6)
+    plt.axhline(y=0, color="black", linestyle="--")
+    plt.xlabel("Förutsagt blodtryck (mmHg)")
+    plt.ylabel("Residualer (mmHg)")
+    plt.title("Residualplot - multipel linjär regression")
     plt.show()
