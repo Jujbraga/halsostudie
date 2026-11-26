@@ -59,3 +59,14 @@ def hist_bmi(df):
     ax.grid(True, axis="y")
     plt.legend()
     plt.show()
+
+def scatter_regression(x, y, interc, coef):
+    plt.figure(figsize=(6,4))
+    plt.scatter(x[:,0], y, alpha=0.6)
+    x_line = np.linspace(x.min(), x.max(), 100)
+    y_line = interc + coef * x_line
+    plt.plot(x_line, y_line, color="black")
+    plt.xlabel("År")
+    plt.ylabel("blodtryck (mmHg)")
+    plt.title("blodtryck vs år")
+    plt.show()

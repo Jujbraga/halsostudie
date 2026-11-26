@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy import stats
+from sklearn.linear_model import LinearRegression
 
 def simulate_disease_proportion(data):
     rng = np.random.default_rng(15)
@@ -106,3 +107,33 @@ def simulate_power(a, b, diff, rng, n_sim=10_000, alpha=0.05):
             significant += 1
 
     return significant / n_sim
+
+def linear_regr(x_col, y_col, pred=None, unit=None):
+    model = LinearRegression()
+    model.fit(x_col, y_col)
+
+    y_pred = model.predict(x_col)
+    residuals = y_col - y_pred
+
+    intercept = float(model.intercept_)
+    coef = model.coef_.tolist()
+    r2 = float(model.score(x_col, y_col))
+
+    text = f"""Linjär regression:
+    Intercept = {intercept:.2f}
+    Coefficient = {coef}
+    R² = {r2:.3f}"""
+
+    if pred is not None:
+        prediction = float(model.predict(np.array(pred).reshape(1, -1))[0])
+        text += f"\n    Prognos vid {pred} {unit} = {prediction:.1f}"
+
+    results = {
+        "intercept": intercept,
+        "coef": coef,
+        "r2": r2,
+        "residuals": residuals,
+        "y_pred": y_pred
+    }
+
+    return text, results
