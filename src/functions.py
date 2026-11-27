@@ -1,0 +1,167 @@
+import numpy as np
+import pandas as pd
+from scipy import stats
+from sklearn.linear_model import LinearRegression
+
+def simulate_disease_proportion(data):
+    """
+    Simulate a sample with 1000 random people with the same probability of disease as the dataset
+    Return a DataFrame comparing the dataset with the simulation
+    """
+    rng = np.random.default_rng(15)
+
+    with_disease = int(data.sum())
+    mean_disease = data.mean()
+
+    sample = rng.binomial(n=1, p=mean_disease, size=1000)
+    se_disease = np.sqrt(mean_disease * (1 - mean_disease) / 1000)
+
+    comparison = pd.DataFrame({
+        "Antal personer": [len(data), len(sample)],
+        "Antal sjuka": [with_disease, int(sample.sum())],
+        "Andel sjuka": [mean_disease, sample.mean()],
+    }, index=["Dataset", "Simulering"])
+
+    text = f"""
+    Totalt antal personer med sjukdomen: {with_disease} av {data.count()}
+    Andelen personer med sjukdomen: {mean_disease} ({mean_disease*100}%)
+    Standardfel (SE): {se_disease:.3%}
+    """
+    
+    show_comparison = comparison.style.format({"Andel sjuka": "{:.3%}"})
+
+    return (text, show_comparison)
+
+def calculate_ci_t(data):
+    """
+    Calculate the 95% confidence interval for the mean using the t-distribution
+    Return the lower and upper bounds
+    """
+    bp = data.values
+    n_bp = bp.size
+    mean_bp = data.mean()
+    sd_bp = bp.std(ddof=1)
+    se_bp = sd_bp / np.sqrt(n_bp)
+
+    t_crit = stats.t.ppf(0.975, df=n_bp-1)
+
+    ci_low_t = mean_bp - t_crit * se_bp
+    ci_high_t = mean_bp + t_crit * se_bp
+
+    print(f"n = {n_bp}, medel = {mean_bp:.3f} mmHg, SD = {sd_bp:.3f}, SE = {se_bp:.3f}")
+
+    return (ci_low_t, ci_high_t)
+
+def calculate_ci_boot(data):
+    """
+    Calculate the 95% confidence interval for the mean using bootstrap (10,000 resamples)
+    Return the lower and upper bounds
+    """
+    rng_boot = np.random.default_rng(33)
+
+    bp = data.values
+    n_bp = bp.size
+    n_boot = 10_000
+    boot_means = []
+    for _ in range(n_boot):
+        boot_sample = rng_boot.choice(bp, size=n_bp, replace=True)
+        boot_means.append(boot_sample.mean())
+    ci_low_boot, ci_high_boot = np.percentile(boot_means, [2.5, 97.5])
+
+    return (ci_low_boot, ci_high_boot)
+
+def one_t_welch(a, b):
+    """
+    Run a one-sided Welch's t-test where is mean of b > mean of a
+    Return the t-statistic and the p-value
+    """
+    t_stat, p_one = stats.ttest_ind(
+    b, a,
+    equal_var=False,
+    alternative="greater")
+    return (t_stat, p_one)
+
+def calculate_hypothesis(a, b):
+    """
+    Test whether smokers (b) have higher mean blood pressure than non-smokers (a)
+    Return a DataFrame with the group statistics and a Series with the test result
+    """
+    n_b, n_a = len(b), len(a)
+    mean_b, mean_a = b.mean(), a.mean()
+    sd_b, sd_a = b.std(ddof=1), a.std(ddof=1)
+    diff = mean_b - mean_a
+
+    t_stat, p_one = one_t_welch(a, b)
+
+    alpha = 0.05
+
+    group = pd.DataFrame({
+        "n": [n_b, n_a],
+        "Medel (mmHg)": [mean_b, mean_a],
+        "SD": [sd_b, sd_a],
+    }, index=["Rökare", "Icke-rökare"]).round(3)
+
+    result = pd.Series({
+        "Skillnad i medelvärde": f"{diff:.3f} mmHg",
+        "t-värde": f"{t_stat:.3f}",
+        "p-värde (ensidigt)": f"{p_one:.4f}",
+        "Beslut": "Förkasta H0" if p_one < alpha else "Förkasta inte H0",
+    }, name="Rökare > Icke-rökare")
+
+    return (group, result)
+
+def simulate_power(a, b, diff, rng, n_sim=10_000, alpha=0.05):
+    """
+    Estimate the power of the t-test by simulating samples where b has a mean `diff` higher than a
+    Return the proportion of simulations with a significant result
+    """
+    n_a, n_b = len(a), len(b)
+    mean_a = a.mean()
+    sd_a, sd_b = a.std(ddof=1), b.std(ddof=1)
+    significant = 0
+
+    for _ in range(n_sim):
+        sample_a = rng.normal(mean_a, sd_a, n_a)
+        sample_b = rng.normal(mean_a + diff, sd_b, n_b)
+
+        # Apply the same Welch's one-sided t-test as hypotestest
+        _, p_value = one_t_welch(sample_a, sample_b)
+
+        if p_value < alpha:
+            significant += 1
+
+    return significant / n_sim
+
+def linear_regr(x_col, y_col, pred=None, unit=None):
+    """
+    Fit a simple or multiple linear regression
+    Return a text summary and a dict with intercept, coefficients, R², residuals and predictions
+    """
+    model = LinearRegression()
+    model.fit(x_col, y_col)
+
+    y_pred = model.predict(x_col)
+    residuals = y_col - y_pred
+
+    intercept = float(model.intercept_)
+    coef = model.coef_.tolist()
+    r2 = float(model.score(x_col, y_col))
+
+    text = f"""Linjär regression:
+    Intercept = {intercept:.2f}
+    Coefficient = {coef}
+    R² = {r2:.3f}"""
+
+    if pred is not None:
+        prediction = float(model.predict(np.array(pred).reshape(1, -1))[0])
+        text += f"\n    Prognos vid {pred} {unit} = {prediction:.1f}"
+
+    results = {
+        "intercept": intercept,
+        "coef": coef,
+        "r2": r2,
+        "residuals": residuals,
+        "y_pred": y_pred
+    }
+
+    return text, results
