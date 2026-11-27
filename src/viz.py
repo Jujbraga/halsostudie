@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def boxplot_weight_gender(df):
+    """Plot a boxplot of weight for each sex"""
     fig, ax = plt.subplots(figsize=(8,4))
 
     medianprops = {"color": "black", "linewidth": 2}
@@ -28,6 +29,7 @@ def boxplot_weight_gender(df):
     plt.show()
 
 def scatter_cholesterol(df):
+    """Plot cholesterol vs age as a scatter plot with a trendline"""
     x = df["age"].to_numpy()
     y = df["cholesterol"].to_numpy()
 
@@ -46,6 +48,7 @@ def scatter_cholesterol(df):
     plt.show()
 
 def hist_bmi(df):
+    """Plot a histogram of BMI with lines marking the underweight, normal, overweight and obesity limits"""
     fig, (ax) = plt.subplots(figsize=(8, 4))
     ax.hist(df["bmi"], bins=25, edgecolor="white")
 
@@ -61,6 +64,7 @@ def hist_bmi(df):
     plt.show()
 
 def scatter_regression(x, y, interc, coef):
+    """Plot blood pressure vs age as a scatter plot with the regression line given by interc and coef"""
     plt.figure(figsize=(6,4))
     plt.scatter(x[:,0], y, alpha=0.6)
     x_line = np.linspace(x.min(), x.max(), 100)
@@ -72,6 +76,7 @@ def scatter_regression(x, y, interc, coef):
     plt.show()
 
 def scatter_residuals(x, y):
+    """Plot residuals (y) against predicted blood pressure (x) to check the fit of the regression"""
     plt.figure(figsize=(6, 4))
     plt.scatter(x, y, alpha=0.6)
     plt.axhline(y=0, color="black", linestyle="--")

@@ -4,6 +4,10 @@ from scipy import stats
 from sklearn.linear_model import LinearRegression
 
 def simulate_disease_proportion(data):
+    """
+    Simulate a sample with 1000 random people with the same probability of disease as the dataset
+    Return a DataFrame comparing the dataset with the simulation
+    """
     rng = np.random.default_rng(15)
 
     with_disease = int(data.sum())
@@ -29,6 +33,10 @@ def simulate_disease_proportion(data):
     return (text, show_comparison)
 
 def calculate_ci_t(data):
+    """
+    Calculate the 95% confidence interval for the mean using the t-distribution
+    Return the lower and upper bounds
+    """
     bp = data.values
     n_bp = bp.size
     mean_bp = data.mean()
@@ -45,6 +53,10 @@ def calculate_ci_t(data):
     return (ci_low_t, ci_high_t)
 
 def calculate_ci_boot(data):
+    """
+    Calculate the 95% confidence interval for the mean using bootstrap (10,000 resamples)
+    Return the lower and upper bounds
+    """
     rng_boot = np.random.default_rng(33)
 
     bp = data.values
@@ -59,6 +71,10 @@ def calculate_ci_boot(data):
     return (ci_low_boot, ci_high_boot)
 
 def one_t_welch(a, b):
+    """
+    Run a one-sided Welch's t-test where is mean of b > mean of a
+    Return the t-statistic and the p-value
+    """
     t_stat, p_one = stats.ttest_ind(
     b, a,
     equal_var=False,
@@ -66,6 +82,10 @@ def one_t_welch(a, b):
     return (t_stat, p_one)
 
 def calculate_hypothesis(a, b):
+    """
+    Test whether smokers (b) have higher mean blood pressure than non-smokers (a)
+    Return a DataFrame with the group statistics and a Series with the test result
+    """
     n_b, n_a = len(b), len(a)
     mean_b, mean_a = b.mean(), a.mean()
     sd_b, sd_a = b.std(ddof=1), a.std(ddof=1)
@@ -91,6 +111,10 @@ def calculate_hypothesis(a, b):
     return (group, result)
 
 def simulate_power(a, b, diff, rng, n_sim=10_000, alpha=0.05):
+    """
+    Estimate the power of the t-test by simulating samples where b has a mean `diff` higher than a
+    Return the proportion of simulations with a significant result
+    """
     n_a, n_b = len(a), len(b)
     mean_a = a.mean()
     sd_a, sd_b = a.std(ddof=1), b.std(ddof=1)
@@ -109,6 +133,10 @@ def simulate_power(a, b, diff, rng, n_sim=10_000, alpha=0.05):
     return significant / n_sim
 
 def linear_regr(x_col, y_col, pred=None, unit=None):
+    """
+    Fit a simple or multiple linear regression
+    Return a text summary and a dict with intercept, coefficients, R², residuals and predictions
+    """
     model = LinearRegression()
     model.fit(x_col, y_col)
 
